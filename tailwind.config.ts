@@ -61,7 +61,26 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				terminal: {
+					blue: 'hsl(var(--terminal-blue))',
+					cyan: 'hsl(var(--terminal-cyan))',
+					purple: 'hsl(var(--terminal-purple))',
+					orange: 'hsl(var(--terminal-orange))'
 				}
+			},
+			fontFamily: {
+				mono: [
+					'JetBrains Mono',
+					'Fira Code',
+					'Cascadia Code',
+					'SF Mono',
+					'Consolas',
+					'Liberation Mono',
+					'Menlo',
+					'Monaco',
+					'monospace'
+				]
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
