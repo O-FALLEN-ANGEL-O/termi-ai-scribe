@@ -52,6 +52,20 @@ const commandTemplates = {
     'cpu usage': 'top -bn1 | grep "Cpu(s)"',
     'memory usage': 'free -h',
     'installed programs': 'dpkg -l',
+  },
+  termux: {
+    'device info': 'termux-info',
+    'installed apps': 'pm list packages',
+    'battery status': 'termux-battery-status',
+    'storage usage': 'df -h',
+    'wifi networks': 'termux-wifi-scaninfo',
+    'device temperature': 'cat /sys/class/thermal/thermal_zone*/temp',
+    'running processes': 'ps aux',
+    'network usage': 'cat /proc/net/dev',
+    'check battery': 'termux-battery-status',
+    'show installed': 'pm list packages',
+    'device temp': 'cat /sys/class/thermal/thermal_zone*/temp',
+    'system info': 'termux-info'
   }
 };
 
@@ -94,6 +108,35 @@ drwxr-xr-x  2 user user 4096 Dec 10 10:45 Pictures
    1234      45    12345      23456       1.23   4567   1 chrome
     567      23     6789      12345       0.45   8901   1 notepad
     890      34     4567       8901       2.10   2345   1 explorer`,
+
+  'termux-battery-status': `{
+  "health": "Good",
+  "percentage": 85,
+  "plugged": "PLUGGED_AC",
+  "status": "CHARGING",
+  "temperature": 26.7,
+  "current": 2847000,
+  "voltage": 4.123
+}`,
+
+  'termux-info': `Termux version: 0.118.0
+Android version: 12 (API level 31)
+Device manufacturer: Samsung
+Device model: SM-G991B
+Architecture: aarch64
+Available RAM: 6.2 GB
+Storage: 128 GB (45% used)
+WiFi: Connected to "Home_Network"
+Battery: 85% (Charging)`,
+
+  'pm list packages': `package:com.android.chrome
+package:com.spotify.music
+package:com.whatsapp
+package:com.github.android
+package:com.termux
+package:org.mozilla.firefox
+package:com.google.android.gms
+package:com.android.settings`,
 
   'default': 'Command executed successfully.\nOutput would appear here based on the specific command and system state.'
 };
@@ -180,8 +223,8 @@ export async function generateCommand(prompt: string, shell: ShellType): Promise
   }
 
   // Get appropriate mock output
-  const output = mockOutputs[command as keyof typeof mockOutputs] || 
-                 mockOutputs[matchedKey as keyof typeof mockOutputs] || 
+  const output = (mockOutputs as any)[command] || 
+                 (mockOutputs as any)[matchedKey] || 
                  mockOutputs.default;
 
   const risk = assessRisk(command);

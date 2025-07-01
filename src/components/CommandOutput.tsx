@@ -37,31 +37,33 @@ export function CommandOutput({ command, onCopy, onDelete }: CommandOutputProps)
     const icons = {
       powershell: '🔷',
       cmd: '⬛',
-      bash: '🐧'
+      bash: '🐧',
+      termux: '📱'
     };
     return icons[shell as keyof typeof icons] || '💻';
   };
 
   return (
     <Card className="bg-card/30 backdrop-blur-sm border-border/50">
-      <div className="p-4">
+      <div className="p-3 md:p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-lg">{getShellIcon(command.shell)}</span>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
               <Clock className="h-3 w-3" />
-              <span>{command.timestamp.toLocaleString()}</span>
+              <span className="hidden sm:inline">{command.timestamp.toLocaleString()}</span>
+              <span className="sm:hidden">{command.timestamp.toLocaleTimeString()}</span>
             </div>
             {getRiskBadge(command.success)}
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground p-1 md:p-2"
             >
               {isExpanded ? (
                 <ChevronUp className="h-4 w-4" />
@@ -73,7 +75,7 @@ export function CommandOutput({ command, onCopy, onDelete }: CommandOutputProps)
               variant="ghost"
               size="sm"
               onClick={() => onCopy(command.command)}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground p-1 md:p-2"
             >
               <Copy className="h-4 w-4" />
             </Button>
@@ -81,7 +83,7 @@ export function CommandOutput({ command, onCopy, onDelete }: CommandOutputProps)
               variant="ghost"
               size="sm"
               onClick={() => onDelete(command.id)}
-              className="text-muted-foreground hover:text-destructive"
+              className="text-muted-foreground hover:text-destructive p-1 md:p-2"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

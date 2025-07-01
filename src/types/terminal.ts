@@ -1,4 +1,4 @@
-export type ShellType = 'powershell' | 'cmd' | 'bash';
+export type ShellType = 'powershell' | 'cmd' | 'bash' | 'termux';
 
 export interface Command {
   id: string;

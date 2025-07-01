@@ -15,13 +15,15 @@ interface TerminalHeaderProps {
 const shellIcons = {
   powershell: '🔷',
   cmd: '⬛',
-  bash: '🐧'
+  bash: '🐧',
+  termux: '📱'
 };
 
 const shellNames = {
   powershell: 'PowerShell',
   cmd: 'Command Prompt',
-  bash: 'Bash'
+  bash: 'Bash',
+  termux: 'Termux'
 };
 
 export function TerminalHeader({ 
@@ -32,34 +34,34 @@ export function TerminalHeader({
   commandCount 
 }: TerminalHeaderProps) {
   return (
-    <div className="flex items-center justify-between p-4 border-b border-border bg-card/50 backdrop-blur-sm">
-      <div className="flex items-center gap-4">
+    <div className="flex items-center justify-between p-3 md:p-4 border-b border-border bg-card/50 backdrop-blur-sm">
+      <div className="flex items-center gap-2 md:gap-4">
         <div className="flex items-center gap-2">
-          <Terminal className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <Terminal className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+          <h1 className="text-lg md:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             TermiAI
           </h1>
         </div>
         
-        <Badge variant="secondary" className="flex items-center gap-1">
+        <Badge variant="secondary" className="flex items-center gap-1 text-xs">
           <Activity className="h-3 w-3" />
           {isGenerating ? (
             <span className="text-accent">Generating...</span>
           ) : (
-            <span>{commandCount} commands</span>
+            <span className="hidden sm:inline">{commandCount} commands</span>
           )}
         </Badge>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Shell:</span>
+          <span className="text-xs md:text-sm text-muted-foreground hidden sm:inline">Shell:</span>
           <Select value={shell} onValueChange={onShellChange}>
-            <SelectTrigger className="w-40 bg-secondary/50">
+            <SelectTrigger className="w-32 md:w-40 bg-secondary/50">
               <SelectValue>
                 <div className="flex items-center gap-2">
                   <span>{shellIcons[shell]}</span>
-                  <span>{shellNames[shell]}</span>
+                  <span className="hidden sm:inline">{shellNames[shell]}</span>
                 </div>
               </SelectValue>
             </SelectTrigger>
@@ -80,6 +82,12 @@ export function TerminalHeader({
                 <div className="flex items-center gap-2">
                   <span>🐧</span>
                   <span>Bash</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="termux">
+                <div className="flex items-center gap-2">
+                  <span>📱</span>
+                  <span>Termux</span>
                 </div>
               </SelectItem>
             </SelectContent>

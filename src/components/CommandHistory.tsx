@@ -30,8 +30,8 @@ export function CommandHistory({ commands, onCopy, onDelete }: CommandHistoryPro
         <span>Command History ({commands.length} commands)</span>
       </div>
       
-      <ScrollArea className="h-[600px]">
-        <div className="space-y-4 pr-4">
+      <ScrollArea className="h-[400px] md:h-[600px]">
+        <div className="space-y-4 pr-2 md:pr-4">
           {commands.map((command) => (
             <CommandOutput
               key={command.id}
