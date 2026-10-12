@@ -93,6 +93,8 @@ export function PromptInput({ onExecute, isGenerating, shell }: PromptInputProps
         <div className="relative">
           <Textarea
             ref={textareaRef}
+            aria-label="Describe what you want to do"
+            maxLength={500}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -107,7 +109,7 @@ export function PromptInput({ onExecute, isGenerating, shell }: PromptInputProps
           {prompt && (
             <div className="absolute top-2 right-2">
               <Badge variant="secondary" className="text-xs">
-                <span className="hidden sm:inline">Ctrl+Enter to execute</span>
+                <span className="hidden sm:inline">Ctrl+Enter to generate</span>
                 <span className="sm:hidden">Ctrl+↵</span>
               </Badge>
             </div>
@@ -159,7 +161,7 @@ export function PromptInput({ onExecute, isGenerating, shell }: PromptInputProps
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="text-xs text-muted-foreground">
-            Press <kbd className="px-1 py-0.5 bg-secondary rounded text-xs">Ctrl+Enter</kbd> to generate and execute
+            Press <kbd className="px-1 py-0.5 bg-secondary rounded text-xs">Ctrl+Enter</kbd> to generate. TermiAI never runs anything — you copy the command.
           </div>
           
           <Button
@@ -176,8 +178,8 @@ export function PromptInput({ onExecute, isGenerating, shell }: PromptInputProps
             ) : (
               <>
                 <Zap className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Generate & Execute</span>
-                <span className="sm:hidden">Execute</span>
+                <span className="hidden sm:inline">Generate command</span>
+                <span className="sm:hidden">Generate</span>
               </>
             )}
           </Button>

@@ -1,4 +1,7 @@
-import { ShellType, MockAIResponse } from '@/types/terminal';
+import { ShellType, GeneratedCommand, RiskLevel } from '@/types/terminal';
+
+// Offline demo mode: a keyword lookup used only when the AI service isn't reachable
+// (local `vite dev`, or no API key configured). It never invents command output.
 
 // Mock command database for different shell types
 const commandTemplates = {
@@ -69,80 +72,8 @@ const commandTemplates = {
   }
 };
 
-// Mock output responses
-const mockOutputs = {
-  'Get-ChildItem': `Directory: C:\\Users\\Demo
-
-Mode                 LastWriteTime         Length Name
-----                 -------------         ------ ----
-d-----        12/15/2024   2:30 PM                Documents
-d-----        12/15/2024   1:15 PM                Downloads  
-d-----        12/10/2024  10:45 AM                Pictures
--a----        12/14/2024   9:20 AM           1024 config.json
--a----        12/13/2024   4:30 PM           2048 readme.txt`,
-
-  'dir': `Volume in drive C has no label.
-Volume Serial Number is 1234-5678
-
-Directory of C:\\Users\\Demo
-
-12/15/2024  02:30 PM    <DIR>          Documents
-12/15/2024  01:15 PM    <DIR>          Downloads
-12/10/2024  10:45 AM    <DIR>          Pictures
-12/14/2024  09:20 AM             1,024 config.json
-12/13/2024  04:30 PM             2,048 readme.txt
-               2 File(s)          3,072 bytes
-               3 Dir(s)  15,234,567,890 bytes free`,
-
-  'ls -la': `total 24
-drwxr-xr-x  5 user user 4096 Dec 15 14:30 .
-drwxr-xr-x  3 user user 4096 Dec 10 10:45 ..
-drwxr-xr-x  2 user user 4096 Dec 15 14:30 Documents
-drwxr-xr-x  2 user user 4096 Dec 15 13:15 Downloads
-drwxr-xr-x  2 user user 4096 Dec 10 10:45 Pictures
--rw-r--r--  1 user user 1024 Dec 14 09:20 config.json
--rw-r--r--  1 user user 2048 Dec 13 16:30 readme.txt`,
-
-  'Get-Process': `Handles  NPM(K)    PM(K)      WS(K)     CPU(s)     Id  SI ProcessName
--------  ------    -----      -----     ------     --  -- -----------
-   1234      45    12345      23456       1.23   4567   1 chrome
-    567      23     6789      12345       0.45   8901   1 notepad
-    890      34     4567       8901       2.10   2345   1 explorer`,
-
-  'termux-battery-status': `{
-  "health": "Good",
-  "percentage": 85,
-  "plugged": "PLUGGED_AC",
-  "status": "CHARGING",
-  "temperature": 26.7,
-  "current": 2847000,
-  "voltage": 4.123
-}`,
-
-  'termux-info': `Termux version: 0.118.0
-Android version: 12 (API level 31)
-Device manufacturer: Samsung
-Device model: SM-G991B
-Architecture: aarch64
-Available RAM: 6.2 GB
-Storage: 128 GB (45% used)
-WiFi: Connected to "Home_Network"
-Battery: 85% (Charging)`,
-
-  'pm list packages': `package:com.android.chrome
-package:com.spotify.music
-package:com.whatsapp
-package:com.github.android
-package:com.termux
-package:org.mozilla.firefox
-package:com.google.android.gms
-package:com.android.settings`,
-
-  'default': 'Command executed successfully.\nOutput would appear here based on the specific command and system state.'
-};
-
 // Risk assessment based on command patterns
-function assessRisk(command: string): 'low' | 'medium' | 'high' {
+function assessRisk(command: string): RiskLevel {
   const highRiskPatterns = [
     /rm\s+-rf/i, /del\s+\/s/i, /format/i, /shutdown/i, /restart/i,
     /reg\s+delete/i, /Remove-Item.*-Recurse.*-Force/i
@@ -180,62 +111,30 @@ function generateExplanation(prompt: string, command: string, shell: ShellType):
   return explanations[key as keyof typeof explanations];
 }
 
-// Main AI simulation function
-export async function generateCommand(prompt: string, shell: ShellType): Promise<MockAIResponse> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
-
+/** Keyword-matched command for demo mode. */
+export function generateDemoCommand(prompt: string, shell: ShellType): GeneratedCommand {
   const templates = commandTemplates[shell];
   const normalizedPrompt = prompt.toLowerCase();
+  const match = Object.entries(templates).find(([key]) => normalizedPrompt.includes(key));
 
-  // Find matching command template
-  let command = '';
-  let matchedKey = '';
-
-  for (const [key, template] of Object.entries(templates)) {
-    if (normalizedPrompt.includes(key)) {
-      command = template;
-      matchedKey = key;
-      break;
-    }
+  if (!match) {
+    return {
+      command: '',
+      explanation:
+        "Demo mode only knows a handful of common requests (try one of the quick prompts). The AI version understands anything you describe.",
+      risk: 'low',
+      caveat: '',
+      source: 'demo',
+    };
   }
 
-  // If no direct match, try to generate based on keywords
-  if (!command) {
-    if (normalizedPrompt.includes('file') && normalizedPrompt.includes('find')) {
-      command = shell === 'bash' ? 'find . -name "*.txt"' : 
-                shell === 'powershell' ? 'Get-ChildItem -Recurse -Filter "*.txt"' : 
-                'dir /s *.txt';
-    } else if (normalizedPrompt.includes('install') || normalizedPrompt.includes('software')) {
-      command = shell === 'bash' ? 'sudo apt install package-name' :
-                shell === 'powershell' ? 'Install-Package PackageName' :
-                'winget install PackageName';
-    } else if (normalizedPrompt.includes('update')) {
-      command = shell === 'bash' ? 'sudo apt update && sudo apt upgrade' :
-                shell === 'powershell' ? 'Update-Module' :
-                'winget upgrade --all';
-    } else {
-      // Generic fallback
-      command = shell === 'bash' ? `# ${prompt}` :
-                shell === 'powershell' ? `# ${prompt}` :
-                `REM ${prompt}`;
-    }
-  }
-
-  // Get appropriate mock output
-  const output = (mockOutputs as any)[command] || 
-                 (mockOutputs as any)[matchedKey] || 
-                 mockOutputs.default;
-
-  const risk = assessRisk(command);
-  const explanation = generateExplanation(prompt, command, shell);
-
+  const command = match[1];
   return {
     command,
-    explanation,
-    risk,
-    success: Math.random() > 0.1, // 90% success rate
-    output: output + `\n\n[Executed at ${new Date().toLocaleTimeString()}]`
+    explanation: generateExplanation(prompt, command, shell),
+    risk: assessRisk(command),
+    caveat: '',
+    source: 'demo',
   };
 }
 

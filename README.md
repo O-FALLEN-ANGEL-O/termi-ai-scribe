@@ -1,73 +1,37 @@
-# Welcome to your Lovable project
+# TermiAI
 
-## Project info
+Describe what you want to do in plain English and TermiAI writes the command for **PowerShell, Command Prompt, Bash or Termux** — with a one-line explanation, a risk level (read-only / changes things / high risk) and a warning when something deserves one.
 
-**URL**: https://lovable.dev/projects/63c255fa-66b1-4c57-803c-042d1e9bdeb4
+**Copy-only by design:** TermiAI never runs anything. You copy the command into your own terminal and decide.
 
-## How can I edit this code?
+Live: https://termi.praxel.space
 
-There are several ways of editing your application.
+## How it works
 
-**Use Lovable**
+- **Frontend:** Vite + React + TypeScript + Tailwind + shadcn/ui. History, settings and export live in the browser (`localStorage`).
+- **AI:** `api/generate.ts` is a Vercel Function that calls Claude (`claude-opus-5-5` at low effort) with a fixed system prompt and a JSON schema, so every answer comes back as `{ command, explanation, risk, caveat }`. The system prompt is marked for prompt caching. If a safety classifier declines a request, Anthropic's server-side fallback retries it on a recommended model; a full refusal returns a friendly "can't help with that".
+- **Guard rails on the function:** same-origin check, input validation (≤ 500 characters, known shell), per-IP rate limit (20 requests / 10 min per instance), and the API key only ever on the server.
+- **Demo mode:** when the function isn't available (plain `npm run dev`, or no API key yet), the app falls back to a small keyword lookup and labels those results **Demo**. It never invents command output.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/63c255fa-66b1-4c57-803c-042d1e9bdeb4) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Setup
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+npm install
+npm run dev          # UI on http://localhost:8080 (demo mode — the function isn't served)
+npm run typecheck
+npm run build
 ```
 
-**Edit a file directly in GitHub**
+To try the real AI locally, use `vercel dev` with `ANTHROPIC_API_KEY` set.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Deploy (Vercel)
 
-**Use GitHub Codespaces**
+1. Import the repo in Vercel (framework preset: Vite).
+2. Settings → Environment Variables → add `ANTHROPIC_API_KEY` (Production), from https://console.anthropic.com → API keys. Redeploy.
+3. Settings → Domains → add `termi.praxel.space`, then create the CNAME record Vercel shows at your DNS provider.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+`vercel.json` adds SPA routing and security headers (CSP, HSTS, no framing).
 
-## What technologies are used for this project?
+### Cost
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/63c255fa-66b1-4c57-803c-042d1e9bdeb4) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Each request is one short Claude call (a few hundred input tokens, a short JSON answer). Set a monthly spend limit in the Anthropic Console to cap costs; the per-IP rate limit stops a single visitor from running it up.
