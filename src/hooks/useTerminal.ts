@@ -1,27 +1,48 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Command, TerminalConfig, ShellType } from '@/types/terminal';
-import { generateCommand } from '@/services/mockAI';
+import { Command, TerminalConfig } from '@/types/terminal';
+import { generateCommand, GenerationError } from '@/services/ai';
 import { useToast } from '@/hooks/use-toast';
 
 const DEFAULT_CONFIG: TerminalConfig = {
   shell: 'powershell',
-  autoExecute: false,
   showWarnings: true,
   maxHistory: 100,
 };
 
+/** Accepts history saved by older versions (which had fake `output`/`success` fields). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function normalizeCommand(raw: any): Command {
+  return {
+    id: String(raw.id ?? Date.now()),
+    prompt: String(raw.prompt ?? ''),
+    command: String(raw.command ?? ''),
+    explanation: String(raw.explanation ?? ''),
+    risk: raw.risk === 'high' || raw.risk === 'medium' ? raw.risk : 'low',
+    caveat: String(raw.caveat ?? ''),
+    shell: raw.shell ?? 'powershell',
+    timestamp: new Date(raw.timestamp ?? Date.now()),
+    source: raw.source === 'ai' ? 'ai' : 'demo',
+  };
+}
+
+function loadJSON<T>(key: string, fallback: T): T {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export function useTerminal() {
-  const [config, setConfig] = useState<TerminalConfig>(() => {
-    const saved = localStorage.getItem('termiai-config');
-    return saved ? JSON.parse(saved) : DEFAULT_CONFIG;
-  });
+  const [config, setConfig] = useState<TerminalConfig>(() => ({
+    ...DEFAULT_CONFIG,
+    ...loadJSON<Partial<TerminalConfig>>('termiai-config', {}),
+  }));
 
   const [commands, setCommands] = useState<Command[]>(() => {
-    const saved = localStorage.getItem('termiai-history');
-    return saved ? JSON.parse(saved).map((cmd: any) => ({
-      ...cmd,
-      timestamp: new Date(cmd.timestamp)
-    })) : [];
+    const saved = loadJSON<unknown[]>('termiai-history', []);
+    return Array.isArray(saved) ? saved.map(normalizeCommand) : [];
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -45,45 +66,36 @@ export function useTerminal() {
     setCurrentPrompt(prompt);
 
     try {
-      const response = await generateCommand(prompt, config.shell);
-      
+      const result = await generateCommand(prompt, config.shell);
+
       const newCommand: Command = {
         id: Date.now().toString(),
         prompt,
-        command: response.command,
-        output: response.output,
+        ...result,
         shell: config.shell,
         timestamp: new Date(),
-        success: response.success,
       };
 
       setCommands(prev => [newCommand, ...prev].slice(0, config.maxHistory));
 
-      // Show risk warning if enabled
-      if (config.showWarnings && response.risk === 'high') {
+      if (!result.command) {
+        toast({ title: "No command for that", description: result.explanation });
+      } else if (config.showWarnings && result.risk === 'high') {
         toast({
-          title: "High Risk Command",
-          description: "This command may have dangerous effects. Review carefully before execution.",
+          title: "High-risk command",
+          description: "This could delete data or change your system. Read the warning before you run it.",
           variant: "destructive",
         });
-      } else if (config.showWarnings && response.risk === 'medium') {
+      } else if (config.showWarnings && result.risk === 'medium') {
         toast({
-          title: "Medium Risk Command",
-          description: "This command may modify system state. Please review.",
+          title: "Review before running",
+          description: "This command changes files, settings or processes.",
         });
       }
-
-      if (response.success) {
-        toast({
-          title: "Command Generated",
-          description: `Successfully generated ${config.shell} command`,
-        });
-      }
-
     } catch (error) {
       toast({
-        title: "Generation Failed",
-        description: "Failed to generate command. Please try again.",
+        title: "Couldn't generate a command",
+        description: error instanceof GenerationError ? error.message : "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -147,10 +159,8 @@ export function useTerminal() {
     reader.onload = (e) => {
       try {
         const importedCommands = JSON.parse(e.target?.result as string);
-        setCommands(importedCommands.map((cmd: any) => ({
-          ...cmd,
-          timestamp: new Date(cmd.timestamp)
-        })));
+        if (!Array.isArray(importedCommands)) throw new Error('not a list');
+        setCommands(importedCommands.map(normalizeCommand));
         toast({
           title: "History Imported",
           description: "Command history imported successfully",

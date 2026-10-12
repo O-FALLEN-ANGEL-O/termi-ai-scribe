@@ -35,15 +35,6 @@ export function SettingsDialog({
         <div className="space-y-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label htmlFor="auto-execute">Auto Execute Commands</Label>
-              <Switch
-                id="auto-execute"
-                checked={config.autoExecute}
-                onCheckedChange={(checked) => onConfigChange({ autoExecute: checked })}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
               <Label htmlFor="show-warnings">Show Risk Warnings</Label>
               <Switch
                 id="show-warnings"
